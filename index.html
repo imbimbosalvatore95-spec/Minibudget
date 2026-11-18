@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MioBudget - Gestione Spese Offline</title>
+    <!-- iOS Web App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MioBudget">
+    <meta name="theme-color" content="#4f46e5">
+    <link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180">
+    <link id="favicon-icon" rel="icon" type="image/png">
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --accent-primary: #4f46e5;
+            --accent-hover: #4338ca;
+            --emerald: #10b981;
+            --emerald-bg: #d1fae5;
+            --coral: #f43f5e;
+            --coral-bg: #ffe4e6;
+            --amber: #f59e0b;
+            --amber-bg: #fef3c7;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-main: #0f172a;
+                --bg-card: #1e293b;
+                --text-primary: #f8fafc;
+                --text-secondary: #94a3b8;
+                --border-color: #334155;
+                --accent-primary: #6366f1;
+                --accent-hover: #818cf8;
+                --emerald-bg: rgba(16, 185, 129, 0.15);
+                --coral-bg: rgba(244, 63, 94, 0.15);
+                --amber-bg: rgba(245, 158, 11, 0.15);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: calc(40px + env(safe-area-inset-bottom));
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--accent-primary), #818cf8);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .brand h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .offline-badge {
+            font-size: 0.72rem;
+            background: var(--emerald-bg);
+            color: var(--emerald);
+            padding: 3px 8px;
+            border-radius: 99px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Guide Steps inside Modal */
+        .guide-step {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            background: var(--bg-main);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .guide-num {
+            background: var(--accent-primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .code-snippet {
+            display: block;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: var(--accent-primary);
+            margin-top: 6px;
+            word-break: break-all;
+        }
+
+        /* Buttons */
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 14px;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .btn-danger {
+            background-color: var(--coral-bg);
+            color: var(--coral);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--coral);
+            color: white;
+        }
+
+        /* Cards & Grid */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* KPI Summary Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        @media (min-width: 640px) {
+            .kpi-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .kpi-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+
+        .kpi-label {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .kpi-value {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .kpi-edit-btn {
+            padding: 4px 6px;
+            font-size: 0.75rem;
+            background: var(--bg-main);
+            color: var(--accent-primary);
+            border-radius: 6px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 8px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background-color: var(--border-color);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+        }
+
+        /* Quick Add Pills */
+        .quick-add-section {
+            margin-bottom: 16px;
+        }
+
+        .quick-add-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .quick-pills {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+
+        .quick-pills::-webkit-scrollbar {
+            display: none;
+        }
+
+        .pill-btn {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 99px;
+            font-size: 0.82rem;
+            white-space: nowrap;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .pill-btn:hover {
+            border-color: var(--accent-primary);
+            background-color: rgba(79, 70, 229, 0.05);
+        }
+
+        /* Main Layout Split */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1.1fr 0.9fr;
+            }
+        }
+
+        /* Form Styling */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group.full {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent-primary);
+        }
+
+        /* Chart Section */
+        .chart-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-center-text {
+            position: absolute;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .chart-center-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .chart-center-amount {
+            font-size: 1.15rem;
+            font-weight: 800;
+        }
+
+        .legend-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            background-color: var(--bg-main);
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .legend-item:hover {
+            border-color: var(--border-color);
+        }
+
+        .legend-item.active-filter {
+            border-color: var(--accent-primary);
+            background-color: rgba(79, 70, 229, 0.08);
+        }
+
+        .legend-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .legend-right {
+            text-align: right;
+            font-size: 0.85rem;
+        }
+
+        .legend-val {
+            font-weight: 700;
+        }
+
+        .legend-pct {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        /* Payment Method Summary */
+        .payment-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-color);
+            width: 100%;
+        }
+
+        .pay-box {
+            background: var(--bg-main);
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+
+        .pay-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .pay-val {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        /* Transactions List */
+        .filters-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filters-bar input {
+            flex: 1;
+            min-width: 150px;
+            padding: 9px 12px;
+            font-size: 0.875rem;
+        }
+
+        .filters-bar select {
+            width: auto;
+            min-width: 150px;
+            padding: 9px 12px;
+            font-size: 0.875rem;
+        }
+
+        .tx-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 480px;
+            overflow-y: auto;
+        }
+
+        .tx-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background-color: var(--bg-main);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            gap: 10px;
+        }
+
+        .tx-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .tx-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        .tx-info {
+            min-width: 0;
+        }
+
+        .tx-desc {
+            font-weight: 700;
+            font-size: 0.92rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tx-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 2px;
+        }
+
+        .tx-badge {
+            background: var(--bg-card);
+            padding: 1px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tx-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .tx-amount {
+            font-weight: 800;
+            font-size: 0.98rem;
+        }
+
+        .delete-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 6px;
+            border-radius: 6px;
+        }
+
+        .delete-btn:hover {
+            background: var(--coral-bg);
+            color: var(--coral);
+        }
+
+        /* Custom Modal (No alert/confirm!) */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(2px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 100;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .modal-body {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-primary);
+            color: var(--bg-card);
+            padding: 10px 18px;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 200;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">€</div>
+            <div>
+                <h1>MioBudget</h1>
+                <span class="offline-badge">● 100% Offline • Salvato sul dispositivo</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="openInstallModal()" title="Installa su iPhone e Automazioni">
+                📱 App iPhone
+            </button>
+            <button class="btn-secondary" onclick="exportCSV()" title="Scarica resoconto Excel/CSV">
+                📥 Esporta CSV
+            </button>
+            <button class="btn-danger" onclick="openResetModal()" title="Inizia un nuovo mese">
+                🔄 Nuovo Mese
+            </button>
+        </div>
+    </header>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-box">
+            <div class="kpi-label">
+                <span>Stipendio</span>
+                <button class="kpi-edit-btn" onclick="openBudgetModal()">✏️ Modifica</button>
+            </div>
+            <div class="kpi-value" id="kpi-budget">1.500,00 €</div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-label">Totale Uscite</div>
+            <div class="kpi-value" style="color: var(--coral);" id="kpi-spent">0,00 €</div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-label">Risparmi</div>
+            <div class="kpi-value" style="color: var(--accent-primary);" id="kpi-saved">0,00 €</div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-label">Residuo Reale</div>
+            <div class="kpi-value" style="color: var(--emerald);" id="kpi-remaining">1.500,00 €</div>
+        </div>
+    </div>
+
+    <!-- Budget Progress Bar -->
+    <div class="card" style="padding: 14px 18px;">
+        <div class="progress-header">
+            <span id="progress-status-text">Utilizzo del budget mensile</span>
+            <span id="progress-pct-text">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="budget-progress-bar" style="width: 0%; background-color: var(--emerald);"></div>
+        </div>
+    </div>
+
+    <!-- Quick Add Pills -->
+    <div class="quick-add-section">
+        <span class="quick-add-label">⚡ Inserimento Rapido (1 Tap - Data di oggi)</span>
+        <div class="quick-pills">
+            <button class="pill-btn" onclick="quickAdd(1.30, 'Caffè al bar', 'ristoranti', 'Contanti')">☕ Caffè 1,30€</button>
+            <button class="pill-btn" onclick="quickAdd(2.50, 'Colazione bar', 'ristoranti', 'Contanti')">🥐 Colazione 2,50€</button>
+            <button class="pill-btn" onclick="quickAdd(8.30, 'Tabacco', 'tabacco', 'Contanti')">🚬 Tabacco 8,30€</button>
+            <button class="pill-btn" onclick="quickAdd(30.00, 'Benzina', 'trasporti', 'Carta / Bancomat')">⛽ Benzina 30€</button>
+            <button class="pill-btn" onclick="quickAdd(15.00, 'Spesa veloce', 'spesa', 'Carta / Bancomat')">🛒 Spesa 15€</button>
+            <button class="pill-btn" onclick="quickAdd(50.00, 'Accantonamento Risparmio', 'risparmio', 'Carta / Bancomat')">🏦 Risparmio 50€</button>
+        </div>
+    </div>
+
+    <!-- Main Content: Form + Chart -->
+    <div class="main-grid">
+        <!-- Add Expense Form -->
+        <div class="card">
+            <div class="card-title">➕ Segna Nuova Spesa / Movimento</div>
+            <form id="expense-form" onsubmit="handleAddExpense(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="amount">Importo (€) *</label>
+                        <input type="number" id="amount" step="0.01" min="0.01" placeholder="Es. 12.50" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Data *</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="form-group full">
+                        <label for="description">Cosa hai comprato / pagato? *</label>
+                        <input type="text" id="description" placeholder="Es. Spesa Esselunga, Cena con Gioia..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Categoria</label>
+                        <select id="category">
+                            <option value="spesa">🛒 Spesa e Alimentari</option>
+                            <option value="ristoranti">🍽️ Ristoranti, Bar e Svago</option>
+                            <option value="casa">🏠 Casa e Utenze</option>
+                            <option value="trasporti">⛽ Trasporti e Carburante</option>
+                            <option value="salute">💊 Salute e Medici</option>
+                            <option value="shopping">🛍️ Shopping e Varie</option>
+                            <option value="tabacco">🚬 Tabacco</option>
+                            <option value="risparmio">🏦 Risparmio Accantonato</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment">Come hai pagato?</label>
+                        <select id="payment">
+                            <option value="Carta / Bancomat">💳 Carta / Bancomat</option>
+                            <option value="Contanti">💵 Contanti</option>
+                            <option value="Satispay / Altro">📱 Satispay / Altro</option>
+                        </select>
+                    </div>
+                    <div class="form-group full" style="margin-top: 4px;">
+                        <button type="submit" class="btn-primary" style="width: 100%; padding: 12px;">
+                            Aggiungi al Resoconto
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Pie Chart & Automatic Breakdown -->
+        <div class="card">
+            <div class="card-title">
+                <span>📊 Resoconto a Torta</span>
+                <button id="clear-filter-btn" class="kpi-edit-btn" style="display: none;" onclick="setCategoryFilter('all')">Mostra tutte</button>
+            </div>
+            <div class="chart-wrapper">
+                <div class="canvas-container">
+                    <canvas id="pieCanvas" width="220" height="220"></canvas>
+                    <div class="chart-center-text">
+                        <div class="chart-center-label">Totale Uscite</div>
+                        <div class="chart-center-amount" id="chart-center-val">0,00 €</div>
+                    </div>
+                </div>
+
+                <!-- Interactive Legend -->
+                <div class="legend-list" id="chart-legend"></div>
+
+                <!-- Payment Method Breakdown -->
+                <div class="payment-summary" id="payment-summary"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions History -->
+    <div class="card">
+        <div class="card-title">
+            <span>🧾 Storico Movimenti (<span id="tx-count">0</span>)</span>
+        </div>
+        <div class="filters-bar">
+            <input type="text" id="search-input" placeholder="🔍 Cerca spesa (es. Esselunga, Gioia, Caffè...)" oninput="renderApp()">
+            <select id="filter-category" onchange="setCategoryFilter(this.value)">
+                <option value="all">Tutte le categorie</option>
+                <option value="casa">🏠 Casa e Utenze</option>
+                <option value="spesa">🛒 Spesa e Alimentari</option>
+                <option value="ristoranti">🍽️ Ristoranti, Bar e Svago</option>
+                <option value="shopping">🛍️ Shopping e Varie</option>
+                <option value="trasporti">⛽ Trasporti e Carburante</option>
+                <option value="salute">💊 Salute e Medici</option>
+                <option value="risparmio">🏦 Risparmio Accantonato</option>
+                <option value="tabacco">🚬 Tabacco</option>
+            </select>
+        </div>
+        <div class="tx-list" id="tx-list"></div>
+    </div>
+</div>
+
+<!-- Modal: Edit Stipendio -->
+<div class="modal-backdrop" id="budget-modal">
+    <div class="modal-box">
+        <div class="modal-title">Modifica Stipendio / Budget</div>
+        <div class="modal-body">
+            Inserisci l'importo totale disponibile per questo mese:
+            <input type="number" id="new-budget-input" step="0.01" min="0" style="margin-top: 10px;">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal('budget-modal')">Annulla</button>
+            <button class="btn-primary" onclick="saveNewBudget()">Salva Importo</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Reset Month -->
+<div class="modal-backdrop" id="reset-modal">
+    <div class="modal-box">
+        <div class="modal-title">🔄 Inizia un Nuovo Mese?</div>
+        <div class="modal-body">
+            Vuoi azzerare tutte le spese registrate per ripartire da zero con il nuovo stipendio? (Consiglio: esporta prima il CSV se vuoi tenere una copia).
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal('reset-modal')">Annulla</button>
+            <button class="btn-danger" onclick="confirmResetMonth()">Sì, Azzera Spese</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: iPhone Install & Shortcuts Automation Guide -->
+<div class="modal-backdrop" id="install-modal">
+    <div class="modal-box" style="max-width: 460px; max-height: 85vh; overflow-y: auto;">
+        <div class="modal-title">📱 Metti MioBudget sulla Home iPhone</div>
+        <div class="modal-body" style="color: var(--text-primary);">
+            <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.85rem;">
+                Questa web app genera automaticamente un'icona HD e si apre a schermo intero senza barra di Safari:
+            </p>
+            <div class="guide-step">
+                <div class="guide-num">1</div>
+                <div style="font-size: 0.85rem;">Apri questo file in <strong>Safari</strong> sul tuo iPhone.</div>
+            </div>
+            <div class="guide-step">
+                <div class="guide-num">2</div>
+                <div style="font-size: 0.85rem;">Tocca l'icona <strong>Condividi</strong> (quadrato con freccia verso l'alto) in basso al centro.</div>
+            </div>
+            <div class="guide-step">
+                <div class="guide-num">3</div>
+                <div style="font-size: 0.85rem;">Scorri e seleziona <strong>"Aggiungi alla schermata Home"</strong>, poi tocca <em>Aggiungi</em>.</div>
+            </div>
+
+            <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+                <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 6px;">⚡ Bonus: Automazione Apple Pay</div>
+                <p style="font-size: 0.82rem; color: var(--text-secondary);">
+                    Puoi creare un'automazione nell'app <strong>Comandi</strong> di iPhone (<em>Quando tocco Apple Pay</em>) che apre l'URL dell'app aggiungendo i parametri alla fine:
+                </p>
+                <code class="code-snippet">?amount=12.50&desc=Spesa%20Carta&cat=spesa&pay=Carta%20/%20Bancomat</code>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 6px;">
+                    All'apertura, MioBudget registrerà la spesa automaticamente!
+                </p>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="closeModal('install-modal')">Ho capito</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Feedback -->
+<div class="toast" id="toast">Spesa aggiunta!</div>
+
+<script>
+    // Category Metadata
+    const CATEGORIES = {
+        casa:       { label: 'Casa e Utenze',           icon: '🏠', color: '#4f46e5' },
+        spesa:      { label: 'Spesa e Alimentari',      icon: '🛒', color: '#10b981' },
+        ristoranti: { label: 'Ristoranti, Bar e Svago', icon: '🍽️', color: '#f59e0b' },
+        shopping:   { label: 'Shopping e Varie',        icon: '🛍️', color: '#ec4899' },
+        trasporti:  { label: 'Trasporti e Carburante',  icon: '⛽', color: '#06b6d4' },
+        salute:     { label: 'Salute e Medici',         icon: '💊', color: '#8b5cf6' },
+        risparmio:  { label: 'Risparmio Accantonato',   icon: '🏦', color: '#3b82f6' },
+        tabacco:    { label: 'Tabacco',                 icon: '🚬', color: '#64748b' }
+    };
+
+    // Pre-loaded initial data from user's Oct 23 - Nov 18 list
+    const INITIAL_EXPENSES = [
+        { id: 1,  date: '2026-10-23', desc: 'Pranzo fuori per lavoro', amount: 4.00, category: 'ristoranti', payment: 'Contanti' },
+        { id: 2,  date: '2026-10-23', desc: 'Multa', amount: 30.90, category: 'shopping', payment: 'Carta / Bancomat' },
+        { id: 3,  date: '2026-10-23', desc: 'Accantonamento Risparmio', amount: 50.00, category: 'risparmio', payment: 'Carta / Bancomat' },
+        { id: 4,  date: '2026-10-23', desc: 'Condominio + Gas', amount: 175.00, category: 'casa', payment: 'Carta / Bancomat' },
+        { id: 5,  date: '2026-10-23', desc: 'Dentista + Internet', amount: 200.00, category: 'casa', payment: 'Carta / Bancomat' },
+        { id: 6,  date: '2026-10-23', desc: 'Pagamento Vinted a Gioia', amount: 13.00, category: 'shopping', payment: 'Satispay / Altro' },
+        { id: 7,  date: '2026-10-23', desc: 'Benzina', amount: 30.00, category: 'trasporti', payment: 'Carta / Bancomat' },
+        { id: 8,  date: '2026-10-23', desc: 'Cena fuori', amount: 110.50, category: 'ristoranti', payment: 'Carta / Bancomat' },
+        { id: 9,  date: '2026-10-24', desc: 'Shopping giubbotto', amount: 60.05, category: 'shopping', payment: 'Carta / Bancomat' },
+        { id: 10, date: '2026-10-24', desc: 'Gelato', amount: 6.00, category: 'ristoranti', payment: 'Contanti' },
+        { id: 11, date: '2026-10-24', desc: 'Spesa Esselunga', amount: 90.14, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 12, date: '2026-10-25', desc: 'Tabacco', amount: 8.30, category: 'tabacco', payment: 'Contanti' },
+        { id: 13, date: '2026-10-27', desc: 'Negozio cinese', amount: 5.99, category: 'shopping', payment: 'Contanti' },
+        { id: 14, date: '2026-10-27', desc: 'Colazione con Maurizio', amount: 8.80, category: 'ristoranti', payment: 'Contanti' },
+        { id: 15, date: '2026-10-27', desc: 'Spesa Tigros', amount: 13.55, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 16, date: '2026-10-27', desc: 'Farmacia', amount: 10.40, category: 'salute', payment: 'Carta / Bancomat' },
+        { id: 17, date: '2026-10-27', desc: 'Passirana', amount: 5.00, category: 'shopping', payment: 'Contanti' },
+        { id: 18, date: '2026-10-28', desc: 'Caffè', amount: 1.30, category: 'ristoranti', payment: 'Contanti' },
+        { id: 19, date: '2026-10-29', desc: 'Regalo Marta', amount: 5.00, category: 'shopping', payment: 'Contanti' },
+        { id: 20, date: '2026-10-30', desc: 'Caffè prima del medico', amount: 1.30, category: 'ristoranti', payment: 'Contanti' },
+        { id: 21, date: '2026-10-30', desc: 'Dolce', amount: 4.90, category: 'ristoranti', payment: 'Contanti' },
+        { id: 22, date: '2026-10-30', desc: 'Benzina', amount: 40.00, category: 'trasporti', payment: 'Carta / Bancomat' },
+        { id: 23, date: '2026-10-31', desc: 'Coca Cola', amount: 3.00, category: 'ristoranti', payment: 'Contanti' },
+        { id: 24, date: '2026-10-31', desc: 'Tabacco', amount: 8.30, category: 'tabacco', payment: 'Contanti' },
+        { id: 25, date: '2026-10-31', desc: 'Regalo Marta', amount: 2.30, category: 'shopping', payment: 'Contanti' },
+        { id: 26, date: '2026-10-31', desc: 'Dolce e caffè', amount: 5.90, category: 'ristoranti', payment: 'Contanti' },
+        { id: 27, date: '2026-10-31', desc: 'Cena compleanno Marta', amount: 29.50, category: 'ristoranti', payment: 'Carta / Bancomat' },
+        { id: 28, date: '2026-11-01', desc: 'Colazione con Gioia', amount: 6.50, category: 'ristoranti', payment: 'Contanti' },
+        { id: 29, date: '2026-11-01', desc: 'Pane', amount: 3.00, category: 'spesa', payment: 'Contanti' },
+        { id: 30, date: '2026-11-01', desc: 'Vino da Marzia', amount: 6.80, category: 'ristoranti', payment: 'Contanti' },
+        { id: 31, date: '2026-11-02', desc: 'Esselunga', amount: 1.36, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 32, date: '2026-11-02', desc: 'Caffè', amount: 1.30, category: 'ristoranti', payment: 'Contanti' },
+        { id: 33, date: '2026-11-03', desc: 'Caffè con Gioia', amount: 2.60, category: 'ristoranti', payment: 'Contanti' },
+        { id: 34, date: '2026-11-03', desc: 'Cinese soffione doccia e busta Vinted', amount: 11.49, category: 'shopping', payment: 'Contanti' },
+        { id: 35, date: '2026-11-04', desc: 'Esselunga', amount: 6.26, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 36, date: '2026-11-04', desc: 'Esselunga', amount: 24.50, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 37, date: '2026-11-05', desc: 'Caffè con Amerigo', amount: 2.40, category: 'ristoranti', payment: 'Contanti' },
+        { id: 38, date: '2026-11-05', desc: 'Tigros', amount: 17.44, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 39, date: '2026-11-05', desc: 'Biglietti degustazione vini', amount: 26.00, category: 'ristoranti', payment: 'Carta / Bancomat' },
+        { id: 40, date: '2026-11-05', desc: 'Visita medica', amount: 19.40, category: 'salute', payment: 'Carta / Bancomat' },
+        { id: 41, date: '2026-11-06', desc: 'Cibo Muffin', amount: 16.22, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 42, date: '2026-11-06', desc: 'Esselunga', amount: 42.36, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 43, date: '2026-11-07', desc: 'Benzina', amount: 40.01, category: 'trasporti', payment: 'Carta / Bancomat' },
+        { id: 44, date: '2026-11-07', desc: 'Taralli degustazione vino', amount: 10.00, category: 'ristoranti', payment: 'Contanti' },
+        { id: 45, date: '2026-11-07', desc: 'Casello autostrada', amount: 2.70, category: 'trasporti', payment: 'Carta / Bancomat' },
+        { id: 46, date: '2026-11-08', desc: 'Tabacco', amount: 8.30, category: 'tabacco', payment: 'Contanti' },
+        { id: 47, date: '2026-11-08', desc: 'Esselunga', amount: 2.30, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 48, date: '2026-11-08', desc: 'Pane', amount: 2.42, category: 'spesa', payment: 'Contanti' },
+        { id: 49, date: '2026-11-09', desc: 'Caffè con Aurelio', amount: 2.40, category: 'ristoranti', payment: 'Contanti' },
+        { id: 50, date: '2026-11-10', desc: 'Nocciole mercato', amount: 3.75, category: 'spesa', payment: 'Contanti' },
+        { id: 51, date: '2026-11-10', desc: 'Tigros', amount: 12.37, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 52, date: '2026-11-11', desc: 'Caffè ospedale', amount: 1.30, category: 'ristoranti', payment: 'Contanti' },
+        { id: 53, date: '2026-11-11', desc: 'Parcheggio ospedale', amount: 0.60, category: 'trasporti', payment: 'Contanti' },
+        { id: 54, date: '2026-11-11', desc: 'Cibo Muffin', amount: 13.99, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 55, date: '2026-11-11', desc: 'Marca da bollo', amount: 4.41, category: 'salute', payment: 'Contanti' },
+        { id: 56, date: '2026-11-11', desc: 'Farmaco per cura', amount: 48.00, category: 'salute', payment: 'Carta / Bancomat' },
+        { id: 57, date: '2026-11-12', desc: 'Colazione', amount: 2.40, category: 'ristoranti', payment: 'Contanti' },
+        { id: 58, date: '2026-11-12', desc: 'McDonald’s', amount: 8.90, category: 'ristoranti', payment: 'Carta / Bancomat' },
+        { id: 59, date: '2026-11-13', desc: 'Colazione con Amerigo', amount: 3.90, category: 'ristoranti', payment: 'Contanti' },
+        { id: 60, date: '2026-11-13', desc: 'Pranzo lavoro con Amerigo', amount: 13.25, category: 'ristoranti', payment: 'Carta / Bancomat' },
+        { id: 61, date: '2026-11-14', desc: 'Esselunga', amount: 42.00, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 62, date: '2026-11-14', desc: 'Esselunga', amount: 9.44, category: 'spesa', payment: 'Carta / Bancomat' },
+        { id: 63, date: '2026-11-15', desc: 'Tabacco', amount: 8.30, category: 'tabacco', payment: 'Contanti' },
+        { id: 64, date: '2026-11-17', desc: 'Colazione con Gioia', amount: 5.00, category: 'ristoranti', payment: 'Contanti' },
+        { id: 65, date: '2026-11-17', desc: 'Caffè con Gioia', amount: 2.60, category: 'ristoranti', payment: 'Contanti' },
+        { id: 66, date: '2026-11-18', desc: 'Benzina', amount: 15.02, category: 'trasporti', payment: 'Carta / Bancomat' }
+    ];
+
+    // State Management with localStorage
+    const STORAGE_KEY_BUDGET = 'miobudget_stipendio_v1';
+    const STORAGE_KEY_EXPENSES = 'miobudget_spese_v1';
+
+    let state = {
+        budget: 1500.00,
+        expenses: [],
+        activeCategoryFilter: 'all'
+    };
+
+    function loadData() {
+        try {
+            const savedBudget = localStorage.getItem(STORAGE_KEY_BUDGET);
+            const savedExpenses = localStorage.getItem(STORAGE_KEY_EXPENSES);
+
+            if (savedBudget !== null) {
+                state.budget = parseFloat(savedBudget) || 1500.00;
+            }
+            if (savedExpenses !== null) {
+                state.expenses = JSON.parse(savedExpenses);
+            } else {
+                // First run: populate with user's historical data
+                state.expenses = [...INITIAL_EXPENSES];
+                saveData();
+            }
+        } catch (e) {
+            console.error('Errore caricamento localStorage:', e);
+            state.expenses = [...INITIAL_EXPENSES];
+        }
+    }
+
+    function saveData() {
+        try {
+            localStorage.setItem(STORAGE_KEY_BUDGET, state.budget.toString());
+            localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(state.expenses));
+        } catch (e) {
+            console.error('Errore salvataggio localStorage:', e);
+        }
+    }
+
+    // Format Currency EUR
+    function formatEUR(num) {
+        return num.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    }
+
+    // Format Date DD/MM/YYYY
+    function formatDateIT(isoDate) {
+        if (!isoDate) return '';
+        const parts = isoDate.split('-');
+        if (parts.length !== 3) return isoDate;
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    // Set today's date in form
+    function setTodayDate() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
+    }
+
+    // Show Toast
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2400);
+    }
+
+    // Add Expense from Form
+    function handleAddExpense(e) {
+        e.preventDefault();
+        const amount = parseFloat(document.getElementById('amount').value);
+        const date = document.getElementById('date').value;
+        const desc = document.getElementById('description').value.trim();
+        const category = document.getElementById('category').value;
+        const payment = document.getElementById('payment').value;
+
+        if (!amount || amount <= 0 || !desc) return;
+
+        const newTx = {
+            id: Date.now(),
+            date,
+            desc,
+            amount,
+            category,
+            payment
+        };
+
+        state.expenses.unshift(newTx);
+        saveData();
+        renderApp();
+
+        // Reset inputs
+        document.getElementById('amount').value = '';
+        document.getElementById('description').value = '';
+        showToast(`✅ Segnato: ${desc} (${formatEUR(amount)})`);
+    }
+
+    // Quick Add 1-Tap
+    function quickAdd(amount, desc, category, payment) {
+        const today = new Date().toISOString().split('T')[0];
+        const newTx = {
+            id: Date.now(),
+            date: today,
+            desc,
+            amount,
+            category,
+            payment
+        };
+        state.expenses.unshift(newTx);
+        saveData();
+        renderApp();
+        showToast(`⚡ Aggiunto: ${desc} (${formatEUR(amount)})`);
+    }
+
+    // Delete Expense
+    function deleteExpense(id) {
+        state.expenses = state.expenses.filter(item => item.id !== id);
+        saveData();
+        renderApp();
+        showToast('🗑️ Movimento eliminato');
+    }
+
+    // Category Filter
+    function setCategoryFilter(cat) {
+        state.activeCategoryFilter = cat;
+        document.getElementById('filter-category').value = cat;
+        document.getElementById('clear-filter-btn').style.display = cat === 'all' ? 'none' : 'inline-block';
+        renderApp();
+    }
+
+    // Modals Logic
+    function openBudgetModal() {
+        document.getElementById('new-budget-input').value = state.budget;
+        document.getElementById('budget-modal').classList.add('open');
+    }
+
+    function saveNewBudget() {
+        const val = parseFloat(document.getElementById('new-budget-input').value);
+        if (!isNaN(val) && val >= 0) {
+            state.budget = val;
+            saveData();
+            renderApp();
+            closeModal('budget-modal');
+            showToast('💰 Stipendio aggiornato!');
+        }
+    }
+
+    function openResetModal() {
+        document.getElementById('reset-modal').classList.add('open');
+    }
+
+    function confirmResetMonth() {
+        state.expenses = [];
+        state.activeCategoryFilter = 'all';
+        saveData();
+        renderApp();
+        closeModal('reset-modal');
+        showToast('✨ Nuovo mese avviato! Spese azzerate.');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    // Export CSV offline
+    function exportCSV() {
+        let csv = 'Data;Descrizione;Categoria;Metodo Pagamento;Importo (EUR)\n';
+        state.expenses.forEach(tx => {
+            const catLabel = CATEGORIES[tx.category] ? CATEGORIES[tx.category].label : tx.category;
+            const amountStr = tx.amount.toFixed(2).replace('.', ',');
+            csv += `${formatDateIT(tx.date)};"${tx.desc.replace(/"/g, '""')}";"${catLabel}";"${tx.payment}";${amountStr}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `resoconto_spese_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('📥 File CSV scaricato!');
+    }
+
+    // Draw Pure HTML5 Canvas Donut Chart
+    function drawDonutChart(categoryTotals, grandTotal) {
+        const canvas = document.getElementById('pieCanvas');
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const size = 220;
+
+        canvas.width = size * dpr;
+        canvas.height = size * dpr;
+        canvas.style.width = size + 'px';
+        canvas.style.height = size + 'px';
+        ctx.scale(dpr, dpr);
+
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = 92;
+        const innerRadius = 58;
+
+        ctx.clearRect(0, 0, size, size);
+
+        if (grandTotal <= 0) {
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2, true);
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fill();
+            return;
+        }
+
+        let startAngle = -Math.PI / 2; // Start at top (12 o'clock)
+
+        categoryTotals.forEach(item => {
+            if (item.total <= 0) return;
+            const sliceAngle = (item.total / grandTotal) * (Math.PI * 2);
+            const endAngle = startAngle + sliceAngle;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+            ctx.closePath();
+
+            ctx.fillStyle = item.color;
+            ctx.fill();
+
+            // Subtle white gap between slices
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--bg-card').trim() || '#ffffff';
+            ctx.stroke();
+
+            startAngle = endAngle;
+        });
+    }
+
+    // Render Complete UI
+    function renderApp() {
+        // 1. Calculate Totals
+        let totalOut = 0;
+        let totalSaved = 0;
+        const catMap = {};
+        const payMap = {
+            'Carta / Bancomat': 0,
+            'Contanti': 0,
+            'Satispay / Altro': 0
+        };
+
+        Object.keys(CATEGORIES).forEach(key => {
+            catMap[key] = 0;
+        });
+
+        state.expenses.forEach(tx => {
+            totalOut += tx.amount;
+            if (tx.category === 'risparmio') {
+                totalSaved += tx.amount;
+            }
+            if (catMap[tx.category] !== undefined) {
+                catMap[tx.category] += tx.amount;
+            } else {
+                catMap['shopping'] += tx.amount;
+            }
+            if (payMap[tx.payment] !== undefined) {
+                payMap[tx.payment] += tx.amount;
+            } else {
+                payMap['Satispay / Altro'] += tx.amount;
+            }
+        });
+
+        const remaining = state.budget - totalOut;
+        const pctUsed = state.budget > 0 ? Math.min(100, (totalOut / state.budget) * 100) : 0;
+
+        // 2. Update KPI Cards
+        document.getElementById('kpi-budget').textContent = formatEUR(state.budget);
+        document.getElementById('kpi-spent').textContent = formatEUR(totalOut);
+        document.getElementById('kpi-saved').textContent = formatEUR(totalSaved);
+
+        const remEl = document.getElementById('kpi-remaining');
+        remEl.textContent = formatEUR(remaining);
+        remEl.style.color = remaining >= 0 ? 'var(--emerald)' : 'var(--coral)';
+
+        // 3. Update Progress Bar
+        const bar = document.getElementById('budget-progress-bar');
+        bar.style.width = pctUsed.toFixed(1) + '%';
+        document.getElementById('progress-pct-text').textContent = `${pctUsed.toFixed(1)}% usato`;
+
+        if (pctUsed < 75) {
+            bar.style.backgroundColor = 'var(--emerald)';
+            document.getElementById('progress-status-text').textContent = 'Situazione sotto controllo';
+        } else if (pctUsed < 95) {
+            bar.style.backgroundColor = 'var(--amber)';
+            document.getElementById('progress-status-text').textContent = 'Attenzione: ti avvicini al limite';
+        } else {
+            bar.style.backgroundColor = 'var(--coral)';
+            document.getElementById('progress-status-text').textContent = remaining < 0 ? 'Budget superato!' : 'Budget quasi esaurito';
+        }
+
+        // 4. Prepare Chart & Legend Data
+        document.getElementById('chart-center-val').textContent = formatEUR(totalOut);
+
+        const sortedCategories = Object.keys(CATEGORIES)
+            .map(key => ({
+                key,
+                label: CATEGORIES[key].label,
+                icon: CATEGORIES[key].icon,
+                color: CATEGORIES[key].color,
+                total: catMap[key]
+            }))
+            .filter(item => item.total > 0)
+            .sort((a, b) => b.total - a.total);
+
+        drawDonutChart(sortedCategories, totalOut);
+
+        const legendContainer = document.getElementById('chart-legend');
+        legendContainer.innerHTML = '';
+
+        if (sortedCategories.length === 0) {
+            legendContainer.innerHTML = '<div style="text-align:center; color:var(--text-secondary); font-size:0.85rem; padding:10px;">Nessuna spesa registrata</div>';
+        } else {
+            sortedCategories.forEach(item => {
+                const pct = totalOut > 0 ? ((item.total / totalOut) * 100).toFixed(1) : '0.0';
+                const isActive = state.activeCategoryFilter === item.key;
+                const div = document.createElement('div');
+                div.className = `legend-item ${isActive ? 'active-filter' : ''}`;
+                div.onclick = () => setCategoryFilter(isActive ? 'all' : item.key);
+                div.innerHTML = `
+                    <div class="legend-left">
+                        <span class="color-dot" style="background-color: ${item.color};"></span>
+                        <span>${item.icon} ${item.label}</span>
+                    </div>
+                    <div class="legend-right">
+                        <span class="legend-val">${formatEUR(item.total)}</span>
+                        <span class="legend-pct">(${pct}%)</span>
+                    </div>
+                `;
+                legendContainer.appendChild(div);
+            });
+        }
+
+        // 5. Render Payment Method Summary
+        const payContainer = document.getElementById('payment-summary');
+        payContainer.innerHTML = `
+            <div class="pay-box">
+                <div class="pay-label">💳 Carta / Bancomat</div>
+                <div class="pay-val">${formatEUR(payMap['Carta / Bancomat'])}</div>
+            </div>
+            <div class="pay-box">
+                <div class="pay-label">💵 Contanti</div>
+                <div class="pay-val">${formatEUR(payMap['Contanti'])}</div>
+            </div>
+            <div class="pay-box">
+                <div class="pay-label">📱 Satispay / Altro</div>
+                <div class="pay-val">${formatEUR(payMap['Satispay / Altro'])}</div>
+            </div>
+        `;
+
+        // 6. Render Filtered Transactions List
+        const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+// ... existing code ... -->
+                txListEl.appendChild(row);
+            });
+        }
+    }
+
+    // Generate High-Res 180x180 iOS App Icon dynamically via Canvas
+    function generateAppIcons() {
+        try {
+            const canvas = document.createElement('canvas');
+            const size = 180;
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Background Gradient (Indigo to Soft Violet)
+            const grad = ctx.createLinearGradient(0, 0, size, size);
+            grad.addColorStop(0, '#4f46e5');
+            grad.addColorStop(1, '#7c3aed');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+
+            // Subtle Decorative Donut Ring inside Icon
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, 62, 0, Math.PI * 2);
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+            ctx.stroke();
+
+            // Emerald Accent Arc on top right of the ring
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, 62, -Math.PI / 2, 0.4);
+            ctx.lineWidth = 10;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#10b981';
+            ctx.stroke();
+
+            // Bold Euro Symbol in Center
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 84px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('€', size / 2, size / 2 + 4);
+
+            const dataUrl = canvas.toDataURL('image/png');
+            const appleIcon = document.getElementById('apple-touch-icon');
+            const favIcon = document.getElementById('favicon-icon');
+            if (appleIcon) appleIcon.href = dataUrl;
+            if (favIcon) favIcon.href = dataUrl;
+        } catch (err) {
+            console.error('Errore generazione icona iOS:', err);
+        }
+    }
+
+    // Open Install & Automation Modal
+    function openInstallModal() {
+        document.getElementById('install-modal').classList.add('open');
+    }
+
+    // Handle URL Parameters for iOS Shortcuts / Apple Pay Automation
+    // Example: ?amount=15.50&desc=Bar&cat=ristoranti&pay=Carta%20/%20Bancomat
+    function checkURLAutomation() {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const rawAmount = params.get('amount');
+            if (!rawAmount) return;
+
+            const amount = parseFloat(rawAmount.replace(',', '.'));
+            if (isNaN(amount) || amount <= 0) return;
+
+            const desc = (params.get('desc') || 'Pagamento Apple Pay').trim();
+            const rawCat = (params.get('cat') || 'shopping').toLowerCase();
+            const category = CATEGORIES[rawCat] ? rawCat : 'shopping';
+            const payment = params.get('pay') || 'Carta / Bancomat';
+            const today = new Date().toISOString().split('T')[0];
+
+            const newTx = {
+                id: Date.now(),
+                date: today,
+                desc,
+                amount,
+                category,
+                payment
+            };
+
+            state.expenses.unshift(newTx);
+            saveData();
+
+            // Clean URL so refreshing the page doesn't duplicate the expense
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            setTimeout(() => {
+                showToast(`📲 Registrato in automatico: ${desc} (${formatEUR(amount)})`);
+            }, 300);
+        } catch (err) {
+            console.error('Errore lettura parametri URL:', err);
+        }
+    }
+
+    // Initialize App on Load
+    window.addEventListener('DOMContentLoaded', () => {
+        generateAppIcons();
+        setTodayDate();
+        loadData();
+        checkURLAutomation();
+        renderApp();
+    });
+</script>
+
+</body>
+</html>
