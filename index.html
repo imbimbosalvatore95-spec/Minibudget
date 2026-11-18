@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MioBudget - Gestione Spese Offline</title>
+    <title>MioBudget - Storico e Medie Plurimensili</title>
     <!-- iOS Web App Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -125,43 +125,37 @@
             flex-wrap: wrap;
         }
 
-        .guide-step {
+        /* Period Selector Bar */
+        .period-bar {
             display: flex;
-            gap: 10px;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            background: var(--bg-main);
-            padding: 10px;
-            border-radius: var(--radius-sm);
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 6px;
+            gap: 4px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
         }
 
-        .guide-num {
+        .period-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .period-btn.active {
             background: var(--accent-primary);
             color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .code-snippet {
-            display: block;
-            background: var(--bg-main);
-            border: 1px solid var(--border-color);
-            padding: 8px 10px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 0.78rem;
-            color: var(--accent-primary);
-            margin-top: 6px;
-            word-break: break-all;
+            box-shadow: var(--shadow-sm);
         }
 
         button {
@@ -230,6 +224,7 @@
             align-items: center;
         }
 
+        /* KPI Summary Grid */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -253,7 +248,7 @@
         }
 
         .kpi-label {
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             font-weight: 600;
             text-transform: uppercase;
@@ -265,7 +260,7 @@
         }
 
         .kpi-value {
-            font-size: 1.35rem;
+            font-size: 1.25rem;
             font-weight: 800;
             letter-spacing: -0.02em;
         }
@@ -278,33 +273,7 @@
             border-radius: 6px;
         }
 
-        .progress-container {
-            margin-top: 8px;
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-
-        .progress-bar-bg {
-            width: 100%;
-            height: 10px;
-            background-color: var(--border-color);
-            border-radius: 99px;
-            overflow: hidden;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            border-radius: 99px;
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
-        }
-
+        /* Quick Add Pills */
         .quick-add-section {
             margin-bottom: 16px;
         }
@@ -425,7 +394,7 @@
         }
 
         .chart-center-amount {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 800;
         }
 
@@ -703,56 +672,53 @@
             <div class="brand-icon">€</div>
             <div>
                 <h1>MioBudget</h1>
-                <span class="offline-badge">● 100% Offline • Salvato sul dispositivo</span>
+                <span class="offline-badge">● Storico & Medie</span>
             </div>
         </div>
         <div class="header-actions">
-            <button class="btn-secondary" onclick="openInstallModal()" title="Installa su iPhone e Automazioni">
-                📱 App iPhone
-            </button>
             <button class="btn-secondary" onclick="exportCSV()" title="Scarica resoconto Excel/CSV">
                 📥 Esporta CSV
             </button>
-            <button class="btn-danger" onclick="openResetModal()" title="Inizia un nuovo mese">
-                🔄 Nuovo Mese
+            <button class="btn-danger" onclick="openResetModal()" title="Pulisci tutto lo storico">
+                🗑️ Svuota Storico
             </button>
         </div>
     </header>
 
+    <!-- Period Filter Bar -->
+    <div class="period-bar">
+        <button class="period-btn active" id="p-current" onclick="setPeriodFilter('current')">📅 Mese Corrente</button>
+        <button class="period-btn" id="p-3m" onclick="setPeriodFilter('3m')">📊 Ultimi 3 Mesi (Media)</button>
+        <button class="period-btn" id="p-6m" onclick="setPeriodFilter('6m')">📈 Ultimi 6 Mesi (Media)</button>
+        <button class="period-btn" id="p-all" onclick="setPeriodFilter('all')">📚 Tutto lo Storico</button>
+    </div>
+
+    <!-- KPI Cards -->
     <div class="kpi-grid">
         <div class="kpi-box">
             <div class="kpi-label">
-                <span>Stipendio</span>
-                <button class="kpi-edit-btn" onclick="openBudgetModal()">✏️ Modifica</button>
+                <span id="kpi-budget-label">Stipendio (Mensile)</span>
+                <button class="kpi-edit-btn" onclick="openBudgetModal()">✏️</button>
             </div>
             <div class="kpi-value" id="kpi-budget">1.500,00 €</div>
         </div>
         <div class="kpi-box">
-            <div class="kpi-label">Totale Uscite</div>
+            <div class="kpi-label" id="kpi-spent-label">Uscite Totali</div>
             <div class="kpi-value" style="color: var(--coral);" id="kpi-spent">0,00 €</div>
         </div>
         <div class="kpi-box">
-            <div class="kpi-label">Risparmi</div>
+            <div class="kpi-label" id="kpi-saved-label">Risparmi</div>
             <div class="kpi-value" style="color: var(--accent-primary);" id="kpi-saved">0,00 €</div>
         </div>
         <div class="kpi-box">
-            <div class="kpi-label">Residuo Reale</div>
+            <div class="kpi-label" id="kpi-remaining-label">Residuo</div>
             <div class="kpi-value" style="color: var(--emerald);" id="kpi-remaining">1.500,00 €</div>
         </div>
     </div>
 
-    <div class="card" style="padding: 14px 18px;">
-        <div class="progress-header">
-            <span id="progress-status-text">Utilizzo del budget mensile</span>
-            <span id="progress-pct-text">0%</span>
-        </div>
-        <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="budget-progress-bar" style="width: 0%; background-color: var(--emerald);"></div>
-        </div>
-    </div>
-
+    <!-- Quick Add Pills -->
     <div class="quick-add-section">
-        <span class="quick-add-label">⚡ Inserimento Rapido (1 Tap - Data di oggi)</span>
+        <span class="quick-add-label">⚡ Inserimento Rapido (1 Tap - Data odierna)</span>
         <div class="quick-pills">
             <button class="pill-btn" onclick="quickAdd(1.30, 'Caffè al bar', 'ristoranti', 'Contanti')">☕ Caffè 1,30€</button>
             <button class="pill-btn" onclick="quickAdd(2.50, 'Colazione bar', 'ristoranti', 'Contanti')">🥐 Colazione 2,50€</button>
@@ -763,9 +729,11 @@
         </div>
     </div>
 
+    <!-- Main Content: Form + Chart -->
     <div class="main-grid">
+        <!-- Add Expense Form -->
         <div class="card">
-            <div class="card-title">➕ Segna Nuova Spesa / Movimento</div>
+            <div class="card-title">➕ Segna Nuova Spesa / Entrata</div>
             <form id="expense-form" onsubmit="handleAddExpense(event)">
                 <div class="form-grid">
                     <div class="form-group">
@@ -778,7 +746,7 @@
                     </div>
                     <div class="form-group full">
                         <label for="description">Cosa hai comprato / pagato? *</label>
-                        <input type="text" id="description" placeholder="Es. Spesa Esselunga, Cena con Gioia..." required>
+                        <input type="text" id="description" placeholder="Es. Spesa Esselunga, Stipendio..." required>
                     </div>
                     <div class="form-group">
                         <label for="category">Categoria</label>
@@ -803,13 +771,14 @@
                     </div>
                     <div class="form-group full" style="margin-top: 4px;">
                         <button type="submit" class="btn-primary" style="width: 100%; padding: 12px;">
-                            Aggiungi al Resoconto
+                            Registra Movimento
                         </button>
                     </div>
                 </div>
             </form>
         </div>
 
+        <!-- Pie Chart & Automatic Breakdown -->
         <div class="card">
             <div class="card-title">
                 <span>📊 Resoconto a Torta</span>
@@ -819,24 +788,27 @@
                 <div class="canvas-container">
                     <canvas id="pieCanvas" width="220" height="220"></canvas>
                     <div class="chart-center-text">
-                        <div class="chart-center-label">Totale Uscite</div>
+                        <div class="chart-center-label" id="center-label-type">Totale Uscite</div>
                         <div class="chart-center-amount" id="chart-center-val">0,00 €</div>
                     </div>
                 </div>
 
+                <!-- Interactive Legend -->
                 <div class="legend-list" id="chart-legend"></div>
 
+                <!-- Payment Method Breakdown -->
                 <div class="payment-summary" id="payment-summary"></div>
             </div>
         </div>
     </div>
 
+    <!-- Transactions History -->
     <div class="card">
         <div class="card-title">
-            <span>🧾 Storico Movimenti (<span id="tx-count">0</span>)</span>
+            <span>🧾 Storico Movimenti Filtrati (<span id="tx-count">0</span>)</span>
         </div>
         <div class="filters-bar">
-            <input type="text" id="search-input" placeholder="🔍 Cerca spesa (es. Esselunga, Gioia, Caffè...)" oninput="renderApp()">
+            <input type="text" id="search-input" placeholder="🔍 Cerca spesa..." oninput="renderApp()">
             <select id="filter-category" onchange="setCategoryFilter(this.value)">
                 <option value="all">Tutte le categorie</option>
                 <option value="casa">🏠 Casa e Utenze</option>
@@ -856,71 +828,33 @@
 <!-- Modal: Edit Stipendio -->
 <div class="modal-backdrop" id="budget-modal">
     <div class="modal-box">
-        <div class="modal-title">Modifica Stipendio / Budget</div>
+        <div class="modal-title">Modifica Stipendio di Riferimento</div>
         <div class="modal-body">
-            Inserisci l'importo totale disponibile per questo mese:
+            Inserisci l'importo mensile standard stimato:
             <input type="number" id="new-budget-input" step="0.01" min="0" style="margin-top: 10px;">
         </div>
         <div class="modal-actions">
             <button class="btn-secondary" onclick="closeModal('budget-modal')">Annulla</button>
-            <button class="btn-primary" onclick="saveNewBudget()">Salva Importo</button>
+            <button class="btn-primary" onclick="saveNewBudget()">Salva</button>
         </div>
     </div>
 </div>
 
-<!-- Modal: Reset Month -->
+<!-- Modal: Reset History -->
 <div class="modal-backdrop" id="reset-modal">
     <div class="modal-box">
-        <div class="modal-title">🔄 Inizia un Nuovo Mese?</div>
+        <div class="modal-title">🗑️ Vuoi azzerare tutto lo storico?</div>
         <div class="modal-body">
-            Vuoi azzerare tutte le spese registrate per ripartire da zero con il nuovo stipendio? (Consiglio: esporta prima il CSV se vuoi tenere una copia).
+            Questa operazione cancellerà tutte le transazioni salvate sul dispositivo. Ricordati di esportare il CSV prima di procedere se vuoi conservare una copia!
         </div>
         <div class="modal-actions">
             <button class="btn-secondary" onclick="closeModal('reset-modal')">Annulla</button>
-            <button class="btn-danger" onclick="confirmResetMonth()">Sì, Azzera Spese</button>
+            <button class="btn-danger" onclick="confirmResetHistory()">Sì, Cancella Tutto</button>
         </div>
     </div>
 </div>
 
-<!-- Modal: iPhone Install & Shortcuts Automation Guide -->
-<div class="modal-backdrop" id="install-modal">
-    <div class="modal-box" style="max-width: 460px; max-height: 85vh; overflow-y: auto;">
-        <div class="modal-title">📱 Metti MioBudget sulla Home iPhone</div>
-        <div class="modal-body" style="color: var(--text-primary);">
-            <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.85rem;">
-                Questa web app genera automaticamente un'icona HD e si apre a schermo intero senza barra di Safari:
-            </p>
-            <div class="guide-step">
-                <div class="guide-num">1</div>
-                <div style="font-size: 0.85rem;">Apri questo sito in <strong>Safari</strong> (modalità normale, non Privata) sul tuo iPhone.</div>
-            </div>
-            <div class="guide-step">
-                <div class="guide-num">2</div>
-                <div style="font-size: 0.85rem;">Tocca l'icona <strong>Condividi</strong> (quadrato con freccia verso l'alto) in basso al centro.</div>
-            </div>
-            <div class="guide-step">
-                <div class="guide-num">3</div>
-                <div style="font-size: 0.85rem;">Scorri e seleziona <strong>"Aggiungi alla schermata Home"</strong>, poi tocca <em>Aggiungi</em>.</div>
-            </div>
-
-            <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color);">
-                <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 6px;">⚡ Bonus: Automazione Apple Pay</div>
-                <p style="font-size: 0.82rem; color: var(--text-secondary);">
-                    Puoi creare un'automazione nell'app <strong>Comandi</strong> di iPhone (<em>Quando tocco Apple Pay</em>) che apre l'URL dell'app aggiungendo i parametri alla fine:
-                </p>
-                <code class="code-snippet">?amount=12.50&desc=Spesa%20Carta&cat=spesa&pay=Carta%20/%20Bancomat</code>
-                <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 6px;">
-                    All'apertura, MioBudget registrerà la spesa automaticamente!
-                </p>
-            </div>
-        </div>
-        <div class="modal-actions">
-            <button class="btn-primary" onclick="closeModal('install-modal')">Ho capito</button>
-        </div>
-    </div>
-</div>
-
-<div class="toast" id="toast">Spesa aggiunta!</div>
+<div class="toast" id="toast">Operazione completata!</div>
 
 <script>
     const CATEGORIES = {
@@ -1009,7 +943,8 @@
     let state = {
         budget: 1500.00,
         expenses: [],
-        activeCategoryFilter: 'all'
+        activeCategoryFilter: 'all',
+        periodFilter: 'current' // 'current', '3m', '6m', 'all'
     };
 
     function loadData() {
@@ -1027,7 +962,7 @@
                 saveData();
             }
         } catch (e) {
-            console.error('Errore caricamento localStorage:', e);
+            console.error('Errore caricamento:', e);
             state.expenses = [...INITIAL_EXPENSES];
         }
     }
@@ -1037,7 +972,7 @@
             localStorage.setItem(STORAGE_KEY_BUDGET, state.budget.toString());
             localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(state.expenses));
         } catch (e) {
-            console.error('Errore salvataggio localStorage:', e);
+            console.error('Errore salvataggio:', e);
         }
     }
 
@@ -1062,6 +997,15 @@
         toast.textContent = msg;
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 2400);
+    }
+
+    function setPeriodFilter(period) {
+        state.periodFilter = period;
+        ['current', '3m', '6m', 'all'].forEach(p => {
+            const btn = document.getElementById('p-' + p);
+            if (btn) btn.classList.toggle('active', p === period);
+        });
+        renderApp();
     }
 
     function handleAddExpense(e) {
@@ -1089,7 +1033,7 @@
 
         document.getElementById('amount').value = '';
         document.getElementById('description').value = '';
-        showToast(`✅ Segnato: ${desc} (${formatEUR(amount)})`);
+        showToast(`✅ Registrato: ${desc} (${formatEUR(amount)})`);
     }
 
     function quickAdd(amount, desc, category, payment) {
@@ -1142,13 +1086,13 @@
         document.getElementById('reset-modal').classList.add('open');
     }
 
-    function confirmResetMonth() {
+    function confirmResetHistory() {
         state.expenses = [];
         state.activeCategoryFilter = 'all';
         saveData();
         renderApp();
         closeModal('reset-modal');
-        showToast('✨ Nuovo mese avviato! Spese azzerate.');
+        showToast('✨ Storico svuotato.');
     }
 
     function closeModal(id) {
@@ -1167,7 +1111,7 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `resoconto_spese_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `miobudget_storico_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -1236,63 +1180,80 @@
     }
 
     function renderApp() {
+        const now = new Date();
+        const currentYearMonth = now.toISOString().slice(0, 7); // 'YYYY-MM'
+
+        // Filter expenses based on selected period for calculations & chart
+        let periodExpenses = state.expenses.filter(tx => {
+            if (!tx.date) return false;
+            if (state.periodFilter === 'current') {
+                return tx.date.slice(0, 7) === currentYearMonth;
+            } else if (state.periodFilter === '3m' || state.periodFilter === '6m') {
+                const monthsBack = state.periodFilter === '3m' ? 3 : 6;
+                const limitDate = new Date(now.getFullYear(), now.getMonth() - monthsBack + 1, 1);
+                const txDate = new Date(tx.date);
+                return txDate >= limitDate;
+            }
+            return true; // 'all'
+        });
+
+        // Calculate divisor for averages if 3m, 6m or all
+        let divisorMonths = 1;
+        if (state.periodFilter === '3m') divisorMonths = 3;
+        else if (state.periodFilter === '6m') divisorMonths = 6;
+        else if (state.periodFilter === 'all') {
+            // Count unique months present in data
+            const uniqueMonths = new Set(state.expenses.map(tx => tx.date.slice(0, 7)));
+            divisorMonths = Math.max(1, uniqueMonths.size);
+        }
+
         let totalOut = 0;
         let totalSaved = 0;
         const catMap = {};
-        const payMap = {
-            'Carta / Bancomat': 0,
-            'Contanti': 0,
-            'Satispay / Altro': 0
-        };
+        const payMap = { 'Carta / Bancomat': 0, 'Contanti': 0, 'Satispay / Altro': 0 };
 
-        Object.keys(CATEGORIES).forEach(key => {
-            catMap[key] = 0;
-        });
+        Object.keys(CATEGORIES).forEach(key => { catMap[key] = 0; });
 
-        state.expenses.forEach(tx => {
+        periodExpenses.forEach(tx => {
             totalOut += tx.amount;
-            if (tx.category === 'risparmio') {
-                totalSaved += tx.amount;
-            }
-            if (catMap[tx.category] !== undefined) {
-                catMap[tx.category] += tx.amount;
-            } else {
-                catMap['shopping'] += tx.amount;
-            }
-            if (payMap[tx.payment] !== undefined) {
-                payMap[tx.payment] += tx.amount;
-            } else {
-                payMap['Satispay / Altro'] += tx.amount;
-            }
+            if (tx.category === 'risparmio') totalSaved += tx.amount;
+            if (catMap[tx.category] !== undefined) catMap[tx.category] += tx.amount;
+            else catMap['shopping'] += tx.amount;
+
+            if (payMap[tx.payment] !== undefined) payMap[tx.payment] += tx.amount;
+            else payMap['Satispay / Altro'] += tx.amount;
         });
 
-        const remaining = state.budget - totalOut;
-        const pctUsed = state.budget > 0 ? Math.min(100, (totalOut / state.budget) * 100) : 0;
+        // If viewing averages (3m, 6m, all), divide totals by number of months
+        let effectiveBudget = state.budget;
+        let displayOut = totalOut / divisorMonths;
+        let displaySaved = totalSaved / divisorMonths;
+        let displayRemaining = effectiveBudget - displayOut;
 
-        document.getElementById('kpi-budget').textContent = formatEUR(state.budget);
-        document.getElementById('kpi-spent').textContent = formatEUR(totalOut);
-        document.getElementById('kpi-saved').textContent = formatEUR(totalSaved);
-
-        const remEl = document.getElementById('kpi-remaining');
-        remEl.textContent = formatEUR(remaining);
-        remEl.style.color = remaining >= 0 ? 'var(--emerald)' : 'var(--coral)';
-
-        const bar = document.getElementById('budget-progress-bar');
-        bar.style.width = pctUsed.toFixed(1) + '%';
-        document.getElementById('progress-pct-text').textContent = `${pctUsed.toFixed(1)}% usato`;
-
-        if (pctUsed < 75) {
-            bar.style.backgroundColor = 'var(--emerald)';
-            document.getElementById('progress-status-text').textContent = 'Situazione sotto controllo';
-        } else if (pctUsed < 95) {
-            bar.style.backgroundColor = 'var(--amber)';
-            document.getElementById('progress-status-text').textContent = 'Attenzione: ti avvicini al limite';
+        // Update Labels based on view mode
+        if (state.periodFilter === 'current') {
+            document.getElementById('kpi-budget-label').textContent = 'Stipendio (Mese)';
+            document.getElementById('kpi-spent-label').textContent = 'Uscite Mese';
+            document.getElementById('kpi-saved-label').textContent = 'Risparmi Mese';
+            document.getElementById('kpi-remaining-label').textContent = 'Residuo Mese';
         } else {
-            bar.style.backgroundColor = 'var(--coral)';
-            document.getElementById('progress-status-text').textContent = remaining < 0 ? 'Budget superato!' : 'Budget quasi esaurito';
+            document.getElementById('kpi-budget-label').textContent = 'Stipendio (Media/Mese)';
+            document.getElementById('kpi-spent-label').textContent = `Media Uscite (${divisorMonths}m)`;
+            document.getElementById('kpi-saved-label').textContent = `Media Risparmi (${divisorMonths}m)`;
+            document.getElementById('kpi-remaining-label').textContent = 'Residuo Medio';
         }
 
-        document.getElementById('chart-center-val').textContent = formatEUR(totalOut);
+        const pctUsed = effectiveBudget > 0 ? Math.min(100, (displayOut / effectiveBudget) * 100) : 0;
+
+        document.getElementById('kpi-budget').textContent = formatEUR(effectiveBudget);
+        document.getElementById('kpi-spent').textContent = formatEUR(displayOut);
+        document.getElementById('kpi-saved').textContent = formatEUR(displaySaved);
+
+        const remEl = document.getElementById('kpi-remaining');
+        remEl.textContent = formatEUR(displayRemaining);
+        remEl.style.color = displayRemaining >= 0 ? 'var(--emerald)' : 'var(--coral)';
+
+        document.getElementById('chart-center-val').textContent = formatEUR(displayOut);
 
         const sortedCategories = Object.keys(CATEGORIES)
             .map(key => ({
@@ -1300,21 +1261,21 @@
                 label: CATEGORIES[key].label,
                 icon: CATEGORIES[key].icon,
                 color: CATEGORIES[key].color,
-                total: catMap[key]
+                total: catMap[key] / divisorMonths // average per category
             }))
             .filter(item => item.total > 0)
             .sort((a, b) => b.total - a.total);
 
-        drawDonutChart(sortedCategories, totalOut);
+        drawDonutChart(sortedCategories, displayOut);
 
         const legendContainer = document.getElementById('chart-legend');
         legendContainer.innerHTML = '';
 
         if (sortedCategories.length === 0) {
-            legendContainer.innerHTML = '<div style="text-align:center; color:var(--text-secondary); font-size:0.85rem; padding:10px;">Nessuna spesa registrata</div>';
+            legendContainer.innerHTML = '<div style="text-align:center; color:var(--text-secondary); font-size:0.85rem; padding:10px;">Nessuna spesa nel periodo</div>';
         } else {
             sortedCategories.forEach(item => {
-                const pct = totalOut > 0 ? ((item.total / totalOut) * 100).toFixed(1) : '0.0';
+                const pct = displayOut > 0 ? ((item.total / displayOut) * 100).toFixed(1) : '0.0';
                 const isActive = state.activeCategoryFilter === item.key;
                 const div = document.createElement('div');
                 div.className = `legend-item ${isActive ? 'active-filter' : ''}`;
@@ -1337,19 +1298,19 @@
         payContainer.innerHTML = `
             <div class="pay-box">
                 <div class="pay-label">💳 Carta / Bancomat</div>
-                <div class="pay-val">${formatEUR(payMap['Carta / Bancomat'])}</div>
+                <div class="pay-val">${formatEUR(payMap['Carta / Bancomat'] / divisorMonths)}</div>
             </div>
             <div class="pay-box">
                 <div class="pay-label">💵 Contanti</div>
-                <div class="pay-val">${formatEUR(payMap['Contanti'])}</div>
+                <div class="pay-val">${formatEUR(payMap['Contanti'] / divisorMonths)}</div>
             </div>
             <div class="pay-box">
                 <div class="pay-label">📱 Satispay / Altro</div>
-                <div class="pay-val">${formatEUR(payMap['Satispay / Altro'])}</div>
+                <div class="pay-val">${formatEUR(payMap['Satispay / Altro'] / divisorMonths)}</div>
             </div>
         `;
 
-        // 6. Render Filtered Transactions List (FIXED)
+        // Render Transactions List (Search filter applies to all historical transactions)
         const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
         const filteredExpenses = state.expenses.filter(tx => {
             const matchesCat = state.activeCategoryFilter === 'all' || tx.category === state.activeCategoryFilter;
@@ -1365,7 +1326,7 @@
         txListEl.innerHTML = '';
 
         if (filteredExpenses.length === 0) {
-            txListEl.innerHTML = '<div style="text-align:center; color:var(--text-secondary); padding:20px; font-size:0.9rem;">Nessun movimento trovato con questi filtri.</div>';
+            txListEl.innerHTML = '<div style="text-align:center; color:var(--text-secondary); padding:20px; font-size:0.9rem;">Nessun movimento trovato.</div>';
         } else {
             filteredExpenses.forEach(tx => {
                 const catInfo = CATEGORIES[tx.category] || { label: 'Varie', icon: '🧾', color: '#64748b' };
@@ -1395,95 +1356,9 @@
         }
     }
 
-    function generateAppIcons() {
-        try {
-            const canvas = document.createElement('canvas');
-            const size = 180;
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d');
-
-            const grad = ctx.createLinearGradient(0, 0, size, size);
-            grad.addColorStop(0, '#4f46e5');
-            grad.addColorStop(1, '#7c3aed');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, size, size);
-
-            ctx.beginPath();
-            ctx.arc(size / 2, size / 2, 62, 0, Math.PI * 2);
-            ctx.lineWidth = 10;
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.arc(size / 2, size / 2, 62, -Math.PI / 2, 0.4);
-            ctx.lineWidth = 10;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = '#10b981';
-            ctx.stroke();
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 84px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('€', size / 2, size / 2 + 4);
-
-            const dataUrl = canvas.toDataURL('image/png');
-            const appleIcon = document.getElementById('apple-touch-icon');
-            const favIcon = document.getElementById('favicon-icon');
-            if (appleIcon) appleIcon.href = dataUrl;
-            if (favIcon) favIcon.href = dataUrl;
-        } catch (err) {
-            console.error('Errore generazione icona iOS:', err);
-        }
-    }
-
-    function openInstallModal() {
-        document.getElementById('install-modal').classList.add('open');
-    }
-
-    function checkURLAutomation() {
-        try {
-            const params = new URLSearchParams(window.location.search);
-            const rawAmount = params.get('amount');
-            if (!rawAmount) return;
-
-            const amount = parseFloat(rawAmount.replace(',', '.'));
-            if (isNaN(amount) || amount <= 0) return;
-
-            const desc = (params.get('desc') || 'Pagamento Apple Pay').trim();
-            const rawCat = (params.get('cat') || 'shopping').toLowerCase();
-            const category = CATEGORIES[rawCat] ? rawCat : 'shopping';
-            const payment = params.get('pay') || 'Carta / Bancomat';
-            const today = new Date().toISOString().split('T')[0];
-
-            const newTx = {
-                id: Date.now(),
-                date: today,
-                desc,
-                amount,
-                category,
-                payment
-            };
-
-            state.expenses.unshift(newTx);
-            saveData();
-
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            setTimeout(() => {
-                showToast(`📲 Registrato in automatico: ${desc} (${formatEUR(amount)})`);
-            }, 300);
-        } catch (err) {
-            console.error('Errore lettura parametri URL:', err);
-        }
-    }
-
     window.addEventListener('DOMContentLoaded', () => {
-        generateAppIcons();
         setTodayDate();
         loadData();
-        checkURLAutomation();
         renderApp();
     });
 </script>
