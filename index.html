@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MioBudget - Storico e Medie Plurimensili</title>
+    <title>MioBudget - Storico, Stipendi & Residui</title>
     <!-- iOS Web App Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -222,6 +222,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         /* KPI Summary Grid */
@@ -265,12 +267,133 @@
             letter-spacing: -0.02em;
         }
 
+        .kpi-sub {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 3px;
+            font-weight: 600;
+        }
+
         .kpi-edit-btn {
             padding: 4px 6px;
             font-size: 0.75rem;
             background: var(--bg-main);
             color: var(--accent-primary);
             border-radius: 6px;
+        }
+
+        /* Salary Calendar / History Section */
+        .salary-top-bar {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        @media (min-width: 640px) {
+            .salary-top-bar {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .salary-stat-box {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+        }
+
+        .salary-stat-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .salary-stat-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-top: 2px;
+        }
+
+        .salary-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        @media (min-width: 560px) {
+            .salary-calendar-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (min-width: 820px) {
+            .salary-calendar-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .month-cal-card {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 8px;
+            transition: border-color 0.15s, transform 0.15s;
+            cursor: pointer;
+        }
+
+        .month-cal-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-1px);
+        }
+
+        .month-cal-card.current-month-highlight {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.2);
+        }
+
+        .month-cal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .month-cal-tag {
+            font-size: 0.68rem;
+            padding: 2px 6px;
+            border-radius: 99px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .month-cal-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .month-cal-row strong {
+            color: var(--text-primary);
+        }
+
+        .month-cal-residue {
+            padding-top: 6px;
+            border-top: 1px dashed var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 700;
         }
 
         /* Quick Add Pills */
@@ -620,7 +743,7 @@
             border-radius: var(--radius-lg);
             padding: 20px;
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
         }
 
@@ -640,6 +763,7 @@
             display: flex;
             justify-content: flex-end;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .toast {
@@ -672,14 +796,17 @@
             <div class="brand-icon">€</div>
             <div>
                 <h1>MioBudget</h1>
-                <span class="offline-badge">● Storico & Medie</span>
+                <span class="offline-badge">● Storico, Stipendi & Residui</span>
             </div>
         </div>
         <div class="header-actions">
+            <button class="btn-primary" onclick="openSalaryModal()" title="Carica o modifica stipendio mensile">
+                💼 Carica Stipendio
+            </button>
             <button class="btn-secondary" onclick="exportCSV()" title="Scarica resoconto Excel/CSV">
                 📥 Esporta CSV
             </button>
-            <button class="btn-danger" onclick="openResetModal()" title="Pulisci tutto lo storico">
+            <button class="btn-danger" onclick="openResetModal()" title="Pulisci tutto lo storico spese">
                 🗑️ Svuota Storico
             </button>
         </div>
@@ -697,23 +824,54 @@
     <div class="kpi-grid">
         <div class="kpi-box">
             <div class="kpi-label">
-                <span id="kpi-budget-label">Stipendio (Mensile)</span>
-                <button class="kpi-edit-btn" onclick="openBudgetModal()">✏️</button>
+                <span id="kpi-budget-label">Stipendio (Mese)</span>
+                <button class="kpi-edit-btn" onclick="openSalaryModal()" title="Carica/Modifica Stipendio">✏️</button>
             </div>
             <div class="kpi-value" id="kpi-budget">1.500,00 €</div>
+            <div class="kpi-sub" id="kpi-budget-sub">Media stipendi: 1.500,00 €</div>
         </div>
         <div class="kpi-box">
-            <div class="kpi-label" id="kpi-spent-label">Uscite Totali</div>
+            <div class="kpi-label" id="kpi-spent-label">Uscite Mese</div>
             <div class="kpi-value" style="color: var(--coral);" id="kpi-spent">0,00 €</div>
+            <div class="kpi-sub" id="kpi-spent-sub">Totale periodo</div>
         </div>
         <div class="kpi-box">
-            <div class="kpi-label" id="kpi-saved-label">Risparmi</div>
+            <div class="kpi-label" id="kpi-saved-label">Risparmi Mese</div>
             <div class="kpi-value" style="color: var(--accent-primary);" id="kpi-saved">0,00 €</div>
+            <div class="kpi-sub" id="kpi-saved-sub">Accantonamenti</div>
         </div>
         <div class="kpi-box">
-            <div class="kpi-label" id="kpi-remaining-label">Residuo</div>
+            <div class="kpi-label" id="kpi-remaining-label">Residuo Mese</div>
             <div class="kpi-value" style="color: var(--emerald);" id="kpi-remaining">1.500,00 €</div>
+            <div class="kpi-sub" id="kpi-residue-cumulative">Residui conservati: 0,00 €</div>
         </div>
+    </div>
+
+    <!-- Nuovo Modulo: Storico Stipendi a Calendario, Media e Residui -->
+    <div class="card" id="salary-calendar-card">
+        <div class="card-title">
+            <span>🗓️ Calendario Stipendi, Media & Residui Conservati</span>
+            <button class="btn-secondary" style="padding: 6px 10px; font-size: 0.78rem;" onclick="openSalaryModal()">
+                + Aggiungi / Modifica Mese
+            </button>
+        </div>
+
+        <div class="salary-top-bar">
+            <div class="salary-stat-box">
+                <div class="salary-stat-label">Media Stipendi Registrati</div>
+                <div class="salary-stat-val" style="color: var(--accent-primary);" id="salary-avg-val">0,00 €</div>
+            </div>
+            <div class="salary-stat-box">
+                <div class="salary-stat-label">Residuo Mese Selezionato</div>
+                <div class="salary-stat-val" id="salary-month-residue-val">0,00 €</div>
+            </div>
+            <div class="salary-stat-box">
+                <div class="salary-stat-label">Residui Conservati (Totale)</div>
+                <div class="salary-stat-val" style="color: var(--emerald);" id="salary-total-residue-val">0,00 €</div>
+            </div>
+        </div>
+
+        <div class="salary-calendar-grid" id="salary-calendar-grid"></div>
     </div>
 
     <!-- Quick Add Pills -->
@@ -825,17 +983,29 @@
     </div>
 </div>
 
-<!-- Modal: Edit Stipendio -->
-<div class="modal-backdrop" id="budget-modal">
+<!-- Modal: Carica / Modifica Stipendio Mensile nello Storico -->
+<div class="modal-backdrop" id="salary-modal">
     <div class="modal-box">
-        <div class="modal-title">Modifica Stipendio di Riferimento</div>
+        <div class="modal-title">💼 Storico Stipendio Mensile</div>
         <div class="modal-body">
-            Inserisci l'importo mensile standard stimato:
-            <input type="number" id="new-budget-input" step="0.01" min="0" style="margin-top: 10px;">
+            Seleziona il mese e inserisci lo stipendio accreditato. Ogni mese viene salvato nello storico senza cancellare i mesi precedenti:
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+                <div>
+                    <label for="salary-month-input">Mese di riferimento</label>
+                    <input type="month" id="salary-month-input" style="margin-top: 4px;">
+                </div>
+                <div>
+                    <label for="salary-amount-input">Importo stipendio (€)</label>
+                    <input type="number" id="salary-amount-input" step="0.01" min="0" placeholder="Es. 1650.00" style="margin-top: 4px;">
+                </div>
+            </div>
         </div>
         <div class="modal-actions">
-            <button class="btn-secondary" onclick="closeModal('budget-modal')">Annulla</button>
-            <button class="btn-primary" onclick="saveNewBudget()">Salva</button>
+            <button class="btn-danger" id="delete-salary-month-btn" onclick="deleteSelectedSalaryMonth()" style="margin-right: auto;">
+                Elimina Mese
+            </button>
+            <button class="btn-secondary" onclick="closeModal('salary-modal')">Annulla</button>
+            <button class="btn-primary" onclick="saveSalaryEntry()">Salva Stipendio</button>
         </div>
     </div>
 </div>
@@ -843,13 +1013,13 @@
 <!-- Modal: Reset History -->
 <div class="modal-backdrop" id="reset-modal">
     <div class="modal-box">
-        <div class="modal-title">🗑️ Vuoi azzerare tutto lo storico?</div>
+        <div class="modal-title">🗑️ Vuoi azzerare tutto lo storico spese?</div>
         <div class="modal-body">
-            Questa operazione cancellerà tutte le transazioni salvate sul dispositivo. Ricordati di esportare il CSV prima di procedere se vuoi conservare una copia!
+            Questa operazione cancellerà tutte le transazioni spese salvate sul dispositivo (lo storico stipendi resterà salvato separatamente). Ricordati di esportare il CSV prima di procedere se vuoi conservare una copia!
         </div>
         <div class="modal-actions">
             <button class="btn-secondary" onclick="closeModal('reset-modal')">Annulla</button>
-            <button class="btn-danger" onclick="confirmResetHistory()">Sì, Cancella Tutto</button>
+            <button class="btn-danger" onclick="confirmResetHistory()">Sì, Cancella Spese</button>
         </div>
     </div>
 </div>
@@ -939,10 +1109,12 @@
 
     const STORAGE_KEY_BUDGET = 'miobudget_stipendio_v1';
     const STORAGE_KEY_EXPENSES = 'miobudget_spese_v1';
+    const STORAGE_KEY_SALARIES = 'miobudget_storico_stipendi_v1';
 
     let state = {
         budget: 1500.00,
         expenses: [],
+        salariesByMonth: {}, // es. { '2026-10': 1500, '2026-11': 1550 }
         activeCategoryFilter: 'all',
         periodFilter: 'current' // 'current', '3m', '6m', 'all'
     };
@@ -951,6 +1123,7 @@
         try {
             const savedBudget = localStorage.getItem(STORAGE_KEY_BUDGET);
             const savedExpenses = localStorage.getItem(STORAGE_KEY_EXPENSES);
+            const savedSalaries = localStorage.getItem(STORAGE_KEY_SALARIES);
 
             if (savedBudget !== null) {
                 state.budget = parseFloat(savedBudget) || 1500.00;
@@ -959,11 +1132,25 @@
                 state.expenses = JSON.parse(savedExpenses);
             } else {
                 state.expenses = [...INITIAL_EXPENSES];
-                saveData();
             }
+            if (savedSalaries !== null) {
+                state.salariesByMonth = JSON.parse(savedSalaries) || {};
+            } else {
+                // Inizializza i mesi presenti nello storico senza sovrascrivere eventuali caricamenti futuri
+                const monthsFromExpenses = new Set(
+                    (state.expenses || []).map(tx => tx.date && tx.date.slice(0, 7)).filter(Boolean)
+                );
+                const nowYM = new Date().toISOString().slice(0, 7);
+                monthsFromExpenses.add(nowYM);
+                monthsFromExpenses.forEach(ym => {
+                    state.salariesByMonth[ym] = state.budget;
+                });
+            }
+            saveData();
         } catch (e) {
             console.error('Errore caricamento:', e);
             state.expenses = [...INITIAL_EXPENSES];
+            state.salariesByMonth = { '2026-10': state.budget, '2026-11': state.budget };
         }
     }
 
@@ -971,6 +1158,7 @@
         try {
             localStorage.setItem(STORAGE_KEY_BUDGET, state.budget.toString());
             localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(state.expenses));
+            localStorage.setItem(STORAGE_KEY_SALARIES, JSON.stringify(state.salariesByMonth));
         } catch (e) {
             console.error('Errore salvataggio:', e);
         }
@@ -985,6 +1173,14 @@
         const parts = isoDate.split('-');
         if (parts.length !== 3) return isoDate;
         return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function formatMonthLabelIT(ym) {
+        if (!ym || !ym.includes('-')) return ym;
+        const [year, month] = ym.split('-');
+        const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+        const label = date.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' });
+        return label.charAt(0).toUpperCase() + label.slice(1);
     }
 
     function setTodayDate() {
@@ -1066,19 +1262,50 @@
         renderApp();
     }
 
-    function openBudgetModal() {
-        document.getElementById('new-budget-input').value = state.budget;
-        document.getElementById('budget-modal').classList.add('open');
+    function openSalaryModal(preselectMonth = null) {
+        const currentYM = new Date().toISOString().slice(0, 7);
+        const targetYM = preselectMonth || currentYM;
+        const monthInput = document.getElementById('salary-month-input');
+        const amountInput = document.getElementById('salary-amount-input');
+
+        monthInput.value = targetYM;
+        amountInput.value = state.salariesByMonth[targetYM] !== undefined
+            ? state.salariesByMonth[targetYM]
+            : state.budget;
+
+        monthInput.onchange = () => {
+            const m = monthInput.value;
+            amountInput.value = state.salariesByMonth[m] !== undefined ? state.salariesByMonth[m] : '';
+        };
+
+        document.getElementById('salary-modal').classList.add('open');
     }
 
-    function saveNewBudget() {
-        const val = parseFloat(document.getElementById('new-budget-input').value);
+    function saveSalaryEntry() {
+        const ym = document.getElementById('salary-month-input').value;
+        const val = parseFloat(document.getElementById('salary-amount-input').value);
+        if (!ym) return;
         if (!isNaN(val) && val >= 0) {
-            state.budget = val;
+            state.salariesByMonth[ym] = val;
+            const currentYM = new Date().toISOString().slice(0, 7);
+            if (ym === currentYM) {
+                state.budget = val;
+            }
             saveData();
             renderApp();
-            closeModal('budget-modal');
-            showToast('💰 Stipendio aggiornato!');
+            closeModal('salary-modal');
+            showToast(`💼 Stipendio ${formatMonthLabelIT(ym)} salvato (${formatEUR(val)})!`);
+        }
+    }
+
+    function deleteSelectedSalaryMonth() {
+        const ym = document.getElementById('salary-month-input').value;
+        if (ym && state.salariesByMonth[ym] !== undefined) {
+            delete state.salariesByMonth[ym];
+            saveData();
+            renderApp();
+            closeModal('salary-modal');
+            showToast(`🗑️ Stipendio di ${formatMonthLabelIT(ym)} rimosso`);
         }
     }
 
@@ -1092,7 +1319,7 @@
         saveData();
         renderApp();
         closeModal('reset-modal');
-        showToast('✨ Storico svuotato.');
+        showToast('✨ Storico spese svuotato.');
     }
 
     function closeModal(id) {
@@ -1179,9 +1406,62 @@
         }[tag]));
     }
 
+    function buildMonthlySummary() {
+        const expensesByMonth = {};
+        state.expenses.forEach(tx => {
+            if (!tx.date) return;
+            const ym = tx.date.slice(0, 7);
+            expensesByMonth[ym] = (expensesByMonth[ym] || 0) + tx.amount;
+        });
+
+        const allMonthsSet = new Set([
+            ...Object.keys(state.salariesByMonth),
+            ...Object.keys(expensesByMonth)
+        ]);
+
+        const sortedMonths = Array.from(allMonthsSet).sort();
+        let cumulativeResidue = 0;
+
+        return sortedMonths.map(ym => {
+            const salary = state.salariesByMonth[ym] !== undefined ? state.salariesByMonth[ym] : state.budget;
+            const spent = expensesByMonth[ym] || 0;
+            const monthResidue = salary - spent;
+            cumulativeResidue += monthResidue;
+            return {
+                ym,
+                salary,
+                spent,
+                monthResidue,
+                cumulativeResidue
+            };
+        });
+    }
+
     function renderApp() {
         const now = new Date();
         const currentYearMonth = now.toISOString().slice(0, 7); // 'YYYY-MM'
+
+        const monthlyRows = buildMonthlySummary();
+        const monthlyMap = {};
+        monthlyRows.forEach(r => { monthlyMap[r.ym] = r; });
+
+        // Media stipendi su tutti i mesi caricati nello storico stipendi
+        const salaryValues = Object.values(state.salariesByMonth).filter(v => typeof v === 'number' && !isNaN(v));
+        const avgSalaryAll = salaryValues.length > 0
+            ? salaryValues.reduce((acc, v) => acc + v, 0) / salaryValues.length
+            : state.budget;
+
+        const currentMonthData = monthlyMap[currentYearMonth] || {
+            ym: currentYearMonth,
+            salary: state.salariesByMonth[currentYearMonth] !== undefined ? state.salariesByMonth[currentYearMonth] : state.budget,
+            spent: 0,
+            monthResidue: state.budget,
+            cumulativeResidue: 0
+        };
+
+        const totalCumulativeResidue = monthlyRows.length > 0
+            ? monthlyRows[monthlyRows.length - 1].cumulativeResidue
+            : 0;
 
         // Filter expenses based on selected period for calculations & chart
         let periodExpenses = state.expenses.filter(tx => {
@@ -1197,12 +1477,10 @@
             return true; // 'all'
         });
 
-        // Calculate divisor for averages if 3m, 6m or all
         let divisorMonths = 1;
         if (state.periodFilter === '3m') divisorMonths = 3;
         else if (state.periodFilter === '6m') divisorMonths = 6;
         else if (state.periodFilter === 'all') {
-            // Count unique months present in data
             const uniqueMonths = new Set(state.expenses.map(tx => tx.date.slice(0, 7)));
             divisorMonths = Math.max(1, uniqueMonths.size);
         }
@@ -1224,34 +1502,84 @@
             else payMap['Satispay / Altro'] += tx.amount;
         });
 
-        // If viewing averages (3m, 6m, all), divide totals by number of months
-        let effectiveBudget = state.budget;
+        let effectiveBudget = state.periodFilter === 'current'
+            ? currentMonthData.salary
+            : avgSalaryAll;
+
         let displayOut = totalOut / divisorMonths;
         let displaySaved = totalSaved / divisorMonths;
         let displayRemaining = effectiveBudget - displayOut;
 
-        // Update Labels based on view mode
         if (state.periodFilter === 'current') {
             document.getElementById('kpi-budget-label').textContent = 'Stipendio (Mese)';
             document.getElementById('kpi-spent-label').textContent = 'Uscite Mese';
             document.getElementById('kpi-saved-label').textContent = 'Risparmi Mese';
             document.getElementById('kpi-remaining-label').textContent = 'Residuo Mese';
         } else {
-            document.getElementById('kpi-budget-label').textContent = 'Stipendio (Media/Mese)';
+            document.getElementById('kpi-budget-label').textContent = 'Stipendio (Media)';
             document.getElementById('kpi-spent-label').textContent = `Media Uscite (${divisorMonths}m)`;
             document.getElementById('kpi-saved-label').textContent = `Media Risparmi (${divisorMonths}m)`;
             document.getElementById('kpi-remaining-label').textContent = 'Residuo Medio';
         }
 
-        const pctUsed = effectiveBudget > 0 ? Math.min(100, (displayOut / effectiveBudget) * 100) : 0;
-
         document.getElementById('kpi-budget').textContent = formatEUR(effectiveBudget);
+        document.getElementById('kpi-budget-sub').textContent = `Media stipendi: ${formatEUR(avgSalaryAll)}`;
         document.getElementById('kpi-spent').textContent = formatEUR(displayOut);
+        document.getElementById('kpi-spent-sub').textContent = state.periodFilter === 'current' ? 'Mese corrente' : `Media su ${divisorMonths} mesi`;
         document.getElementById('kpi-saved').textContent = formatEUR(displaySaved);
+        document.getElementById('kpi-saved-sub').textContent = 'Accantonamenti';
 
         const remEl = document.getElementById('kpi-remaining');
         remEl.textContent = formatEUR(displayRemaining);
         remEl.style.color = displayRemaining >= 0 ? 'var(--emerald)' : 'var(--coral)';
+        document.getElementById('kpi-residue-cumulative').textContent = `Residui conservati: ${formatEUR(totalCumulativeResidue)}`;
+
+        // Aggiorna blocco Calendario Stipendi, Media e Residui
+        document.getElementById('salary-avg-val').textContent = formatEUR(avgSalaryAll);
+        const monthResEl = document.getElementById('salary-month-residue-val');
+        monthResEl.textContent = formatEUR(currentMonthData.monthResidue);
+        monthResEl.style.color = currentMonthData.monthResidue >= 0 ? 'var(--emerald)' : 'var(--coral)';
+
+        const totalResEl = document.getElementById('salary-total-residue-val');
+        totalResEl.textContent = formatEUR(totalCumulativeResidue);
+        totalResEl.style.color = totalCumulativeResidue >= 0 ? 'var(--emerald)' : 'var(--coral)';
+
+        const calGrid = document.getElementById('salary-calendar-grid');
+        calGrid.innerHTML = '';
+
+        [...monthlyRows].reverse().forEach(row => {
+            const isCurrent = row.ym === currentYearMonth;
+            const card = document.createElement('div');
+            card.className = `month-cal-card ${isCurrent ? 'current-month-highlight' : ''}`;
+            card.onclick = () => openSalaryModal(row.ym);
+            card.innerHTML = `
+                <div class="month-cal-header">
+                    <span>${formatMonthLabelIT(row.ym)}</span>
+                    <span class="month-cal-tag">${isCurrent ? 'Mese attuale' : 'Modifica'}</span>
+                </div>
+                <div class="month-cal-row">
+                    <span>Stipendio</span>
+                    <strong>${formatEUR(row.salary)}</strong>
+                </div>
+                <div class="month-cal-row">
+                    <span>Uscite</span>
+                    <strong>${formatEUR(row.spent)}</strong>
+                </div>
+                <div class="month-cal-residue">
+                    <span>Residuo</span>
+                    <span style="color: ${row.monthResidue >= 0 ? 'var(--emerald)' : 'var(--coral)'};">
+                        ${formatEUR(row.monthResidue)}
+                    </span>
+                </div>
+                <div class="month-cal-row" style="font-size: 0.72rem;">
+                    <span>Conservato</span>
+                    <strong style="color: ${row.cumulativeResidue >= 0 ? 'var(--accent-primary)' : 'var(--coral)'};">
+                        ${formatEUR(row.cumulativeResidue)}
+                    </strong>
+                </div>
+            `;
+            calGrid.appendChild(card);
+        });
 
         document.getElementById('chart-center-val').textContent = formatEUR(displayOut);
 
@@ -1261,7 +1589,7 @@
                 label: CATEGORIES[key].label,
                 icon: CATEGORIES[key].icon,
                 color: CATEGORIES[key].color,
-                total: catMap[key] / divisorMonths // average per category
+                total: catMap[key] / divisorMonths
             }))
             .filter(item => item.total > 0)
             .sort((a, b) => b.total - a.total);
@@ -1310,7 +1638,6 @@
             </div>
         `;
 
-        // Render Transactions List (Search filter applies to all historical transactions)
         const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
         const filteredExpenses = state.expenses.filter(tx => {
             const matchesCat = state.activeCategoryFilter === 'all' || tx.category === state.activeCategoryFilter;
